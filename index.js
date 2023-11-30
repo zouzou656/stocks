@@ -11,7 +11,24 @@ const { parse } = require("csv-parse");
 
 const kafkaClient = new kafka.KafkaClient({ kafkaHost: "PLAINTEXT://localhost:9092" });
 const producer = new kafka.Producer(kafkaClient);
+const topics = [{ topic: 'Flink_Sink', partition: 0 }];
 
+const options = {
+  autoCommit: false,
+  fetchMaxWaitMs: 1000,
+  fetchMaxBytes: 1024 * 1024,
+};
+const consumer = new kafka.Consumer(kafkaClient,topics,options);
+consumer.on('message', function (message) {
+io.emit("Increase",message)});
+
+consumer.on('error', function (error) {
+  console.error('Error:', error);
+});
+
+producer.on("ready", function () {
+  console.log("Kafka Consumer is ready");
+});
 producer.on("ready", function () {
   console.log("Kafka Producer is ready");
 });
@@ -97,7 +114,7 @@ io.on("connection", (socket) => {
           // All data sent, set shouldClearTopic to true
           shouldClearTopic = true;
         }
-      }, 3000);
+      }, 50);
     }
   
     sendToKafkaAndWebSocket();
